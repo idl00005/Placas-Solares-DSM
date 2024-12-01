@@ -1,3 +1,5 @@
+import os
+
 from pvlib.inverter import pvwatts
 from pvlib.location import Location
 import pandas as pd
@@ -6,8 +8,8 @@ from pvlib import irradiance
 from pvlib.temperature import sapm_cell
 from pvlib.pvsystem import PVSystem
 
-# Parámetros de ubicación
-lat, lon, tz, alt = 40.0, -3.7, 'Europe/Madrid', 667  # Ejemplo: Madrid
+# Parámetros de ubicación en Jaén
+lat, lon, tz, alt = 37.787694, -3.776444, 'Europe/Madrid', 667
 loc = Location(lat, lon, tz, alt)
 
 # Crear rango de tiempo para un año
@@ -15,13 +17,23 @@ times = pd.date_range(start='2023-01-01', end='2023-12-31', freq='1h',tz='Europe
 # Posición solar
 solar_position = loc.get_solarposition(times)
 
+# Cargar el archivo Excel
+archivo_excel = '../datos.xlsx'
+df = pd.read_excel(archivo_excel)
+
+# Mostrar la tabla
+print(df)
+
 # Crear datos sintéticos para un año (8760 horas)
-data = pd.DataFrame(index=times)
-data['GHI'] = np.maximum(0, 100 * np.sin(np.linspace(0, 2 * np.pi, len(times))))  # Ejemplo simplificado
-data['DNI'] = data['GHI'] * 0.7
-data['DHI'] = data['GHI'] * 0.3
-data['Temp'] = 20 + 10 * np.sin(np.linspace(0, 2 * np.pi, len(times)))  # Variación diaria de temperatura
-data['WindSpeed'] = 2 + np.random.rand(len(times))  # Aleatorio entre 2-3 m/s
+data = pd.DataFrame(index=df['Tiempo'])
+data['GHI'] = df['Radiación Global (kJ/m2)']
+data['DNI'] = df['Radiación Directa (kJ/m2)']
+data['DHI'] = df['Radiación Difusa (kJ/m2)']
+
+print(data['GHI'])
+
+data['Temp'] = 20 + 10 * np.sin(np.linspace(0, 2 * np.pi, len(df['Tiempo'])))  # Variación diaria de temperatura
+data['WindSpeed'] = 2 + np.random.rand(len(df['Tiempo']))  # Aleatorio entre 2-3 m/s
 # Esta variable representa la orientación del módulo
 surface_azimuth = 180
 # Esta variable representa la inclinación del módulo
