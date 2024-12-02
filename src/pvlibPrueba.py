@@ -1,3 +1,4 @@
+import locale
 import os
 
 from pvlib.inverter import pvwatts
@@ -8,32 +9,67 @@ from pvlib import irradiance
 from pvlib.temperature import sapm_cell
 from pvlib.pvsystem import PVSystem
 
+# Configurar localización en español
+locale.setlocale(locale.LC_TIME, 'es_ES.utf8')
+
 # Parámetros de ubicación en Jaén
 lat, lon, tz, alt = 37.787694, -3.776444, 'Europe/Madrid', 667
 loc = Location(lat, lon, tz, alt)
 
 # Crear rango de tiempo para un año
 times = pd.date_range(start='2023-01-01', end='2023-12-31', freq='1h',tz='Europe/Madrid')
+
 # Posición solar
 solar_position = loc.get_solarposition(times)
 
 # Cargar el archivo Excel
 archivo_excel = '../datos.xlsx'
 df = pd.read_excel(archivo_excel)
+# Extraer la hora
+df['Hora'] = df['Tiempo'].str.extract(r'a las (\d{1,2}:\d{2})', expand=False)
+# Extraer día y mes por separado
+df[['Dia', 'Mes']] = df['Tiempo'].str.extract(r'(\d+) \((.*?)\)', expand=True)
 
-# Mostrar la tabla
-print(df)
+# Combinar el día y el mes en una sola columna "Fecha"
+df['Fecha'] = df['Dia'] + ' ' + df['Mes']
 
-# Crear datos sintéticos para un año (8760 horas)
-data = pd.DataFrame(index=df['Tiempo'])
-data['GHI'] = df['Radiación Global (kJ/m2)']
-data['DNI'] = df['Radiación Directa (kJ/m2)']
-data['DHI'] = df['Radiación Difusa (kJ/m2)']
+# Limpiar la columna "Fecha" eliminando la palabra "de"
+df['Fecha'] = df['Fecha'].str.replace('de ', '', regex=False).str.strip()
 
-print(data['GHI'])
+# Concatenar fecha y hora
+df['Fecha Completa'] = df['Fecha'] + ' ' + df['Hora']
+df['Fecha Completa'] = df['Fecha Completa'].str.replace(r'^\d+\s', '', regex=True)
 
-data['Temp'] = 20 + 10 * np.sin(np.linspace(0, 2 * np.pi, len(df['Tiempo'])))  # Variación diaria de temperatura
-data['WindSpeed'] = 2 + np.random.rand(len(df['Tiempo']))  # Aleatorio entre 2-3 m/s
+# Convertir a formato datetime
+df['Tiempo'] = pd.to_datetime(df['Fecha Completa'], format='%d %B %H:%M', errors='coerce', dayfirst=True).apply(lambda x: x.replace(year=2023) if pd.notnull(x) else x)
+df['Tiempo'] = df['Tiempo'].dt.tz_localize('Europe/Madrid')
+
+# Eliminar filas con errores en la conversión
+df = df.dropna(subset=['Tiempo'])
+
+# Renombrar columnas del Excel para que coincidan con el DataFrame destino
+df.rename(columns={
+    'Radiación Global (kJ/m2)': 'GHI',  # GHI = Global Horizontal Irradiance
+    'Radiación Difusa (kJ/m2)': 'DHI',  # DHI = Diffuse Horizontal Irradiance
+    'Radiación Directa (kJ/m2)': 'DNI'  # DNI = Direct Normal Irradiance
+}, inplace=True)
+
+# Ajustar el índice al tiempo del Excel
+df.set_index('Tiempo', inplace=True)
+
+# Crear DataFrame completo para todo el año con valores en 0
+data = pd.DataFrame(0.0, index=times, columns=['GHI', 'DHI', 'DNI'])
+
+# Actualizar el DataFrame completo con los valores del Excel
+data.update(df)
+
+# Imprimir el DataFrame completo (asegurando que no se trunque)
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.expand_frame_repr', False)
+
+data['Temp'] = 20 + 10 * np.sin(np.linspace(0, 2 * np.pi, len(times)))  # Variación diaria de temperatura
+data['WindSpeed'] = 2 + np.random.rand(len(times))  # Aleatorio entre 2-3 m/s
 # Esta variable representa la orientación del módulo
 surface_azimuth = 180
 # Esta variable representa la inclinación del módulo
