@@ -1,13 +1,14 @@
 import locale
-import os
 
+from meteostat import Point, Hourly
 from pvlib.inverter import pvwatts
 from pvlib.location import Location
 import pandas as pd
-import numpy as np
+
 from pvlib import irradiance
 from pvlib.temperature import sapm_cell
 from pvlib.pvsystem import PVSystem
+import datetime
 
 # Configurar localización en español
 locale.setlocale(locale.LC_TIME, 'es_ES.utf8')
@@ -17,7 +18,7 @@ lat, lon, tz, alt = 37.787694, -3.776444, 'Europe/Madrid', 667
 loc = Location(lat, lon, tz, alt)
 
 # Crear rango de tiempo para un año
-times = pd.date_range(start='2023-01-01', end='2023-12-31', freq='1h',tz='Europe/Madrid')
+times = pd.date_range(start='2023-01-01', end='2023-12-31', freq='1h')
 
 # Posición solar
 solar_position = loc.get_solarposition(times)
@@ -42,7 +43,6 @@ df['Fecha Completa'] = df['Fecha Completa'].str.replace(r'^\d+\s', '', regex=Tru
 
 # Convertir a formato datetime
 df['Tiempo'] = pd.to_datetime(df['Fecha Completa'], format='%d %B %H:%M', errors='coerce', dayfirst=True).apply(lambda x: x.replace(year=2023) if pd.notnull(x) else x)
-df['Tiempo'] = df['Tiempo'].dt.tz_localize('Europe/Madrid')
 
 # Eliminar filas con errores en la conversión
 df = df.dropna(subset=['Tiempo'])
@@ -58,7 +58,7 @@ df.rename(columns={
 df.set_index('Tiempo', inplace=True)
 
 # Crear DataFrame completo para todo el año con valores en 0
-data = pd.DataFrame(0.0, index=times, columns=['GHI', 'DHI', 'DNI'])
+data = pd.DataFrame(0.0, index=times, columns=['GHI', 'DHI', 'DNI','temp', 'wspd'])
 
 # Actualizar el DataFrame completo con los valores del Excel
 data.update(df)
@@ -68,8 +68,21 @@ pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 pd.set_option('display.expand_frame_repr', False)
 
-data['Temp'] = 20 + 10 * np.sin(np.linspace(0, 2 * np.pi, len(times)))  # Variación diaria de temperatura
-data['WindSpeed'] = 2 + np.random.rand(len(times))  # Aleatorio entre 2-3 m/s
+location = Point(37.787694, -3.776444)  # Madrid, España
+start = datetime.datetime(2023, 1, 1)
+end = datetime.datetime(2023, 12, 31)
+
+
+# Descargar datos diarios
+meteostatInfo = Hourly(location, start, end)
+meteostatInfo = meteostatInfo.fetch()
+
+# Imprimir el DataFrame completo
+data['temp'] = meteostatInfo['temp']
+data['wspd'] = meteostatInfo['wspd']
+print(data)
+
+
 # Esta variable representa la orientación del módulo
 surface_azimuth = 180
 # Esta variable representa la inclinación del módulo
@@ -82,8 +95,9 @@ irradiance_on_module = irradiance.get_total_irradiance(
 poa_global = irradiance_on_module['poa_global']  # Irradiancia total
 
 # Variables ambientales
-temp_air = data['Temp']  # Temperatura ambiente (°C)
-wind_speed = data['WindSpeed']  # Velocidad del viento (m/s)
+temp_air = data['temp']  # Temperatura ambiente (°C)
+wind_speed = data['wspd']  # Velocidad del viento (m/s)
+
 # Parámetros del modelo SAPM
 a = -3.47
 b = -0.0594
