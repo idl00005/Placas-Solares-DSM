@@ -52,6 +52,33 @@ def calculate_irradiance(loc, times, data):
     )
     return irradiance_on_module['poa_global']
 
+
+def calculate_irradiance_with_tilt_azimuth(loc, times, data, tilt, azimuth):
+    """
+    Calcula la irradiancia sobre el módulo solar tomando en cuenta la inclinación y la orientación especificadas.
+
+    Parameters:
+    - loc: El objeto Location de pvlib, que contiene la ubicación geográfica.
+    - times: Un índice de tiempo con las fechas/hora para las que calcular la irradiancia.
+    - data: Un DataFrame con los datos meteorológicos necesarios (DNI, GHI, DHI).
+    - tilt: La inclinación del panel solar en grados.
+    - azimuth: La orientación del panel solar en grados.
+
+    Returns:
+    - irradiance_on_module['poa_global']: La irradiancia global sobre el plano inclinado (W/m²).
+    """
+    # Obtener la posición solar en los tiempos proporcionados
+    solar_position = loc.get_solarposition(times)
+
+    # Calcular la irradiancia sobre el módulo usando los parámetros de inclinación y orientación proporcionados
+    irradiance_on_module = irradiance.get_total_irradiance(
+        tilt, azimuth,
+        solar_position['zenith'], solar_position['azimuth'],
+        data['DNI'], data['GHI'], data['DHI']
+    )
+
+    return irradiance_on_module['poa_global']
+
 def calculate_cell_temperature(poa_global, temp_air, wind_speed):
     a = -3.47
     b = -0.0594
