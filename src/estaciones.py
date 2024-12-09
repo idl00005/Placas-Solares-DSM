@@ -29,25 +29,26 @@ class SolarPanelExperiment:
         self.data['wspd'] = meteostat_info['wspd']
 
     def get_optimal_tilt_and_azimuth(self):
-        # Rango de inclinación y orientación a probar
-        tilt_range = range(0, 91, 5)  # De 0° a 90° (inclinación) con un paso de 5°
-        azimuth_range = range(0, 361, 10)  # De 0° a 360° (orientación) con un paso de 10°
+        tilt_range = range(0, 91, 5)
+        azimuth_range = range(0, 361, 10)
 
         best_tilt = 0
         best_azimuth = 0
         best_energy = 0.0
 
-        # Probar todas las combinaciones de inclinación y orientación
         for tilt in tilt_range:
             for azimuth in azimuth_range:
-                self.data['GHI'] = self.data['GHI'].fillna(0)  # Asegúrate de no tener NaNs
-                # Llamada a la nueva función que toma en cuenta la inclinación y la orientación
+                if self.data['GHI'].isnull().any():
+                    print("Cuidado: Valores NaN en GHI")
+                self.data['GHI'] = self.data['GHI'].fillna(0)
+
                 poa_global = calculate_irradiance_with_tilt_azimuth(self.loc, self.times, self.data, tilt, azimuth)
                 temp_cell = calculate_cell_temperature(poa_global, self.data['temp'], self.data['wspd'])
                 ac_power = calculate_ac_power(poa_global, temp_cell)
                 annual_energy = ac_power.sum() / 1000  # kWh
 
-                # Comparar la energía generada
+                #print(f"Tilt: {tilt}, Azimuth: {azimuth}, Energy: {annual_energy:.2f} kWh")
+
                 if annual_energy > best_energy:
                     best_energy = annual_energy
                     best_tilt = tilt
@@ -61,7 +62,8 @@ class SolarPanelExperiment:
             'Primavera': (datetime.datetime(2023, 3, 21), datetime.datetime(2023, 6, 20)),
             'Verano': (datetime.datetime(2023, 6, 21), datetime.datetime(2023, 9, 20)),
             'Otoño': (datetime.datetime(2023, 9, 21), datetime.datetime(2023, 12, 20)),
-            'Invierno': (datetime.datetime(2023, 12, 21), datetime.datetime(2024, 3, 20)),
+            'Invierno (Parte 1)': (datetime.datetime(2023, 12, 21), datetime.datetime(2023, 12, 31)),
+            'Invierno (Parte 2)': (datetime.datetime(2023, 1, 1), datetime.datetime(2023, 3, 20)),
         }
 
         # Ejecutar el experimento para cada estación
@@ -74,6 +76,7 @@ class SolarPanelExperiment:
             print(f"Tilt óptimo: {best_tilt}°")
             print(f"Azimuth óptimo: {best_azimuth}°")
             print(f"Energía generada: {best_energy:.2f} kWh")
+
 
 if __name__ == "__main__":
     configure_locale()
