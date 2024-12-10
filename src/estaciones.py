@@ -57,6 +57,7 @@ class SolarPanelExperiment:
         return best_tilt, best_azimuth, best_energy
 
     def run(self):
+        acumuladorenergia = 0
         # Fechas para cada estación
         seasons = {
             'Primavera': (datetime.datetime(2023, 3, 21), datetime.datetime(2023, 6, 20)),
@@ -76,6 +77,18 @@ class SolarPanelExperiment:
             print(f"Tilt óptimo: {best_tilt}°")
             print(f"Azimuth óptimo: {best_azimuth}°")
             print(f"Energía generada: {best_energy:.2f} kWh")
+            acumuladorenergia += best_energy
+        print(f"\nEjecutando experimento para toda la temporada ({self.start})-({self.end})")
+        self.times = pd.date_range(start=self.start, end=self.end, freq='1h')
+        self.load_and_prepare_data(self.start, self.end)
+        best_tilt, best_azimuth, best_energy = self.get_optimal_tilt_and_azimuth()
+        print(f"Tilt óptimo: {best_tilt}°")
+        print(f"Azimuth óptimo: {best_azimuth}°")
+        print(f"Energía generada: {best_energy:.2f} kWh")
+        print(f"Energía generada aplicando la optimización del ángulo y orientación por estación: {acumuladorenergia:.2f} kWh")
+        print(f"Energía ganada con la optimización de ángulo y orientación: {acumuladorenergia-best_energy:.2f} kWh ")
+
+
 
 
 if __name__ == "__main__":
