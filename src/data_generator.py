@@ -103,3 +103,27 @@ def calculate_ac_power(poa_global, temp_cell):
     )
     dc_power = system.pvwatts_dc(poa_global, temp_cell)
     return pvwatts(dc_power, 300)
+
+
+import numpy as np
+
+
+def simulate_cleaning_effect(times, data):
+    """
+    Simula el efecto de los limpiadores sobre la irradiancia de los paneles solares.
+    """
+    # Eliminar la parte de precipitación
+    # Solo utilizamos el viento, la temperatura y el tiempo para el efecto de los limpiadores
+
+    wind_factor = np.clip(data['wspd'] / 10, 0, 1)  # Aumento del 0 al 100% según la velocidad del viento
+    temp_factor = np.clip(1 - (data['temp'] - 20) / 40, 0, 1)  # Disminuye eficiencia con altas temperaturas
+    time_factor = np.clip(np.sin(np.linspace(0, 2 * np.pi, len(times))), 0, 1)  # Ciclo de suciedad
+
+    # Combinamos los factores para obtener el factor total de limpieza
+    cleaning_factor = 1 - (0.3 * (wind_factor + temp_factor + time_factor) / 3)
+
+    # Aseguramos que el factor esté en el rango [0, 1]
+    cleaning_factor = np.clip(cleaning_factor, 0, 1)
+
+    return cleaning_factor
+
