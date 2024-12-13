@@ -3,10 +3,12 @@ import pandas as pd
 
 from GeneradorExperimento import GeneradorExperimento
 
+fecha_inicio = '2023-01-01'
+fecha_fin = '2023-12-31'
 # Configuración inicial
-generador = GeneradorExperimento(37.787694, -3.776444, 'Europe/Madrid', 573, 15,
-                                 170, '2023-01-01', '2023-12-31', '1h',
-                                 'datos.xlsx', 300, -0.004, 0.96, 1.6)
+
+generador = GeneradorExperimento(38.732602, -9.116373, 'Europe/Lisbon', 10, 15,
+                                 170, fecha_inicio, fecha_fin, '1h', 300, -0.004, 0.96, 1.6)
 
 # Configurar gráficos
 plt.ion()  
@@ -39,12 +41,14 @@ weekly_dates = []
 total_energy_weekly = 0
 
 # Definir umbral de GHI para filtrar horas sin sol (puedes ajustarlo según tus datos)
-ghi_threshold = 5  # W/m², ajusta este valor según la sensibilidad que desees
+ghi_threshold = 2  # W/m², ajusta este valor según la sensibilidad que desees
 
-pd.set_option('display.max_rows', None)  # Mostrar todas las filas
-pd.set_option('display.max_columns', None)  # Mostrar todas las columnas
-pd.set_option('display.width', None)  # Ajustar al ancho completo
-print(generador.data)
+#pd.set_option('display.max_columns', None)  # Mostrar todas las columnas sin truncar
+#pd.set_option('display.width', None)
+#pd.set_option('display.max_rows', None)
+
+# print(generador.weather)
+
 # Ejecutar simulación y actualizar gráficos
 for i, time in enumerate(generador.weather.index):
     weather_hour = generador.weather.iloc[i:i+1]
