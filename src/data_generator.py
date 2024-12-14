@@ -52,6 +52,33 @@ def calculate_irradiance(loc, times, data):
     )
     return irradiance_on_module['poa_global']
 
+
+def calculate_irradiance_with_tilt_azimuth(loc, times, data, tilt, azimuth):
+    """
+    Calcula la irradiancia sobre el módulo solar tomando en cuenta la inclinación y la orientación especificadas.
+
+    Parameters:
+    - loc: El objeto Location de pvlib, que contiene la ubicación geográfica.
+    - times: Un índice de tiempo con las fechas/hora para las que calcular la irradiancia.
+    - data: Un DataFrame con los datos meteorológicos necesarios (DNI, GHI, DHI).
+    - tilt: La inclinación del panel solar en grados.
+    - azimuth: La orientación del panel solar en grados.
+
+    Returns:
+    - irradiance_on_module['poa_global']: La irradiancia global sobre el plano inclinado (W/m²).
+    """
+    # Obtener la posición solar en los tiempos proporcionados
+    solar_position = loc.get_solarposition(times)
+
+    # Calcular la irradiancia sobre el módulo usando los parámetros de inclinación y orientación proporcionados
+    irradiance_on_module = irradiance.get_total_irradiance(
+        tilt, azimuth,
+        solar_position['zenith'], solar_position['azimuth'],
+        data['dni'], data['ghi'], data['dhi']
+    )
+
+    return irradiance_on_module['poa_global']
+
 def calculate_cell_temperature(poa_global, temp_air, wind_speed):
     a = -3.47
     b = -0.0594
@@ -76,3 +103,27 @@ def calculate_ac_power(poa_global, temp_cell):
     )
     dc_power = system.pvwatts_dc(poa_global, temp_cell)
     return pvwatts(dc_power, 300)
+
+
+import numpy as np
+
+
+def simulate_cleaning_effect(times, data):
+    """
+    Simula el efecto de los limpiadores sobre la irradiancia de los paneles solares.
+    """
+    # Eliminar la parte de precipitación
+    # Solo utilizamos el viento, la temperatura y el tiempo para el efecto de los limpiadores
+
+    wind_factor = np.clip(data['wspd'] / 10, 0, 1)  # Aumento del 0 al 100% según la velocidad del viento
+    temp_factor = np.clip(1 - (data['temp'] - 20) / 40, 0, 1)  # Disminuye eficiencia con altas temperaturas
+    time_factor = np.clip(np.sin(np.linspace(0, 2 * np.pi, len(times))), 0, 1)  # Ciclo de suciedad
+
+    # Combinamos los factores para obtener el factor total de limpieza
+    cleaning_factor = 1 - (0.3 * (wind_factor + temp_factor + time_factor) / 3)
+
+    # Aseguramos que el factor esté en el rango [0, 1]
+    cleaning_factor = np.clip(cleaning_factor, 0, 1)
+
+    return cleaning_factor
+
