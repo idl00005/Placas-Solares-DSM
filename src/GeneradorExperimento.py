@@ -17,7 +17,7 @@ def configure_locale():
     locale.setlocale(locale.LC_TIME, 'es_ES.utf8')
 
 def obterer_datos_excel():
-    file_path = '../datos2.csv'
+    file_path = 'datos2.csv'
 
     raw_data = pd.read_csv(file_path, sep=',', skiprows=0, header=0, low_memory=False)
 
