@@ -1,5 +1,4 @@
 import datetime
-import pandas as pd
 from pvlib.solarposition import get_solarposition
 from GeneradorExperimento import GeneradorExperimento
 from data_generator import calculate_irradiance_with_tilt_azimuth, calculate_cell_temperature, calculate_ac_power
@@ -28,7 +27,7 @@ def simulate_tracking_performance(lat, lon, tz, alt, start, end, panel_type, is_
     area = specs['area']
     eta_inv_nom = 0.96
 
-    generador = GeneradorExperimento(lat, lon, tz, alt, 0, 0, start, end, '1h', pdc0, gamma_pdc, eta_inv_nom, area)
+    generador = GeneradorExperimento(lat, lon, tz, alt, 0, 0, start, end, '1h', pdc0, eta_inv_nom )
 
     total_energy = 0
 

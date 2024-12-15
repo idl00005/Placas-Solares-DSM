@@ -1,12 +1,14 @@
 import locale
 import pandas as pd
+import pvlib
 from meteostat import Hourly, Point
 import numpy as np
+from pvlib.inverter import pvwatts
 
 from pvlib.location import Location
-from pvlib import pvsystem, modelchain
+from pvlib import pvsystem, modelchain, irradiance
 from pvlib.solarposition import get_solarposition
-from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
+from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS, sapm_cell
 
 from data_generator import calculate_irradiance_with_tilt_azimuth
 
@@ -15,7 +17,7 @@ def configure_locale():
     locale.setlocale(locale.LC_TIME, 'es_ES.utf8')
 
 def obterer_datos_excel():
-    file_path = 'datos2.csv'
+    file_path = '../datos2.csv'
 
     raw_data = pd.read_csv(file_path, sep=',', skiprows=0, header=0, low_memory=False)
 
@@ -105,14 +107,24 @@ def create_full_year_dataframe(times, ruta_excel, lat, lon, start, end):
     data['wspd'] = meteostat_info['wspd']
     return data
 
-def crear_modelo(tilt, azimuth, pdc0, gamma_pdc, eta_inv_nom, site, area):
+def crear_modelo(tilt, azimuth, pdc0, eta_inv_nom, modulo):
     temp_model_params = TEMPERATURE_MODEL_PARAMETERS['sapm']['open_rack_glass_glass']
-    module_params = {
-        'Name': 'Generic Module',
-        'pdc0': pdc0,
-        'gamma_pdc': gamma_pdc,
-        'area' : area
-    }
+
+    cec_modules = pvlib.pvsystem.retrieve_sam('CECMod')
+
+    if modulo == 'Monocristalino':
+        module_params = cec_modules.get('Canadian_Solar_CS6X_300M', cec_modules.iloc[:, 0])
+    elif modulo == 'Policristalino':
+        module_params = cec_modules.get('Trina_Solar_TSM_250PA05', cec_modules.iloc[:, 1])
+    elif modulo == 'Película delgada':
+        module_params = cec_modules.get('First_Solar_FS_385', cec_modules.iloc[:, 2])
+    else:
+        module_params = {
+            'Name': 'Generic Module',
+            'pdc0': pdc0,
+            'gamma_pdc': -0.004,
+            'area': 1.6
+        }
 
     system = pvsystem.PVSystem(
         surface_tilt=tilt,
@@ -121,6 +133,9 @@ def crear_modelo(tilt, azimuth, pdc0, gamma_pdc, eta_inv_nom, site, area):
         inverter_parameters={'pdc0': pdc0, 'eta_inv_nom': eta_inv_nom},
         temperature_model_parameters=temp_model_params
     )
+    return system
+
+def crear_mc(system, site):
     return modelchain.ModelChain(system, site, aoi_model="physical", spectral_model="no_loss")
 
 
@@ -138,8 +153,10 @@ def obtener_dhi(weather, times, site):
 
 
 class GeneradorExperimento:
-    def __init__(self, lat, lon, tz, alt, tilt, azimuth,start,end, frecuencia, pdc0, gamma_pdc, eta_inv_nom, area):
+    def __init__(self, lat, lon, tz, alt, tilt, azimuth,start,end, frecuencia, pdc0, eta_inv_nom, modulo = ''):
         configure_locale()
+        self.pdc0 = pdc0
+        self.eta_inv_nom = eta_inv_nom
         self.site = Location(lat, lon, tz, alt)
         self.tilt = tilt
         self.azimuth = azimuth
@@ -149,7 +166,8 @@ class GeneradorExperimento:
         self.weather = obtener_dhi(self.weather, self.data.index, self.site)
         self.weather['temp_air'] = self.data['temp']
         self.weather['wind_speed'] = self.data['wspd']
-        self.mc = crear_modelo(tilt, azimuth, pdc0, gamma_pdc, eta_inv_nom, self.site, area)
+        self.system = crear_modelo(tilt, azimuth, pdc0, eta_inv_nom, modulo)
+        self.mc = crear_mc(self.system, self.site)
 
     def set_tilt(self, tilt):
         self.tilt = tilt
@@ -158,5 +176,44 @@ class GeneradorExperimento:
     def set_azimuth(self, azimuth):
         self.azimuth = azimuth
         self.mc.system.surface_azimuth = azimuth
+
+    def calculate_irradiance_with_tilt_azimuth(self):
+        # Obtener la posición solar en los tiempos proporcionados
+        solar_position = self.site.get_solarposition(self.times)
+
+        # Calcular la irradiancia sobre el módulo usando los parámetros de inclinación y orientación proporcionados
+        irradiance_on_module = irradiance.get_total_irradiance(
+            self.tilt, self.azimuth,
+            solar_position['zenith'], solar_position['azimuth'],
+            self.weather['dni'], self.weather['ghi'], self.weather['dhi']
+        )
+        return irradiance_on_module['poa_global']
+
+    def calculate_cell_temperature(self):
+        a = -3.47
+        b = -0.0594
+        deltaT = 3
+        return sapm_cell(
+            poa_global= self.calculate_irradiance_with_tilt_azimuth(),
+            temp_air= self.weather['temp_air'],
+            wind_speed= self.weather['wind_speed'],
+            a=a,
+            b=b,
+            deltaT=deltaT
+        )
+
+    def calculate_ac_power(self):
+        poa_global = self.calculate_irradiance_with_tilt_azimuth()
+        temp_cell = self.calculate_cell_temperature()
+        dc_power = self.system.pvwatts_dc(poa_global, temp_cell)
+        return pvwatts(dc_power, 300)
+
+    def set_modulo(self, modulo):
+        self.system = crear_modelo(self.tilt, self.azimuth, self.pdc0, self.eta_inv_nom, modulo)
+        self.mc = crear_mc(self.system, self.site)
+        return self.system
+
+
+
         
 

@@ -20,7 +20,7 @@ def determine_season(date):
 
 
 def run_experiment(lat, lon, tz, alt, start, end, pdc0, gamma_pdc, eta_inv_nom, area):
-    generador = GeneradorExperimento(lat, lon, tz, alt, 0, 0, start, end, '1h', pdc0, gamma_pdc, eta_inv_nom, area)
+    generador = GeneradorExperimento(lat, lon, tz, alt, 0, 0, start, end, '1h', pdc0 , eta_inv_nom)
 
     tilt = 25
     azimuth = 200

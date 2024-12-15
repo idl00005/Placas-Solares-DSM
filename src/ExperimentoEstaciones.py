@@ -1,7 +1,6 @@
 import datetime
 
 from GeneradorExperimento import GeneradorExperimento
-from data_generator import calculate_irradiance_with_tilt_azimuth, calculate_cell_temperature, calculate_ac_power
 
 
 def get_optimal_tilt_and_azimuth(lat, lon, tz, alt, start, end,pdc0, gamma_pdc, eta_inv_nom, area):
@@ -13,16 +12,14 @@ def get_optimal_tilt_and_azimuth(lat, lon, tz, alt, start, end,pdc0, gamma_pdc, 
     best_energy = 0.0
 
     generador = GeneradorExperimento(lat, lon, tz, alt, 0,
-                                     0, start, end, '1h', pdc0, gamma_pdc, eta_inv_nom, area)
+                                     0, start, end, '1h', pdc0, eta_inv_nom )
 
     for tilt in tilt_range:
         for azimuth in azimuth_range:
 
             generador.set_tilt(tilt)
             generador.set_azimuth(azimuth)
-            poa_global = calculate_irradiance_with_tilt_azimuth(generador.site, generador.times, generador.weather, tilt, azimuth)
-            temp_cell = calculate_cell_temperature(poa_global, generador.weather['temp_air'], generador.weather['wind_speed'])
-            ac_power = calculate_ac_power(poa_global, temp_cell)
+            ac_power = generador.calculate_ac_power()
             annual_energy = ac_power.sum() / 1000
 
             if annual_energy > best_energy:

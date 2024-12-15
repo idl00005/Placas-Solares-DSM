@@ -1,6 +1,7 @@
 # data_generator.py
 import locale
 import pandas as pd
+import numpy as np
 from meteostat import Point, Hourly
 from pvlib.inverter import pvwatts
 from pvlib.location import Location
@@ -103,9 +104,6 @@ def calculate_ac_power(poa_global, temp_cell):
     )
     dc_power = system.pvwatts_dc(poa_global, temp_cell)
     return pvwatts(dc_power, 300)
-
-
-import numpy as np
 
 
 def simulate_cleaning_effect(times, data):

@@ -8,7 +8,7 @@ fecha_fin = '2023-12-31'
 # Configuración inicial
 
 generador = GeneradorExperimento(38.732602, -9.116373, 'Europe/Lisbon', 10, 15,
-                                 170, fecha_inicio, fecha_fin, '1h', 300, -0.004, 0.96, 1.6)
+                                 170, fecha_inicio, fecha_fin, '1h', 300, 0.96)
 
 # Configurar gráficos
 plt.ion()  

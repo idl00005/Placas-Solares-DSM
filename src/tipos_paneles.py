@@ -21,7 +21,7 @@ def simulate_panel_performance(panel_type, lat, lon, tz, alt, start, end, tilt, 
     eta_inv_nom = 0.96
 
     # Crear el generador de experimentos
-    generador = GeneradorExperimento(lat, lon, tz, alt, 0, 0, start, end, '1h', pdc0, gamma_pdc, eta_inv_nom, area)
+    generador = GeneradorExperimento(lat, lon, tz, alt, 0, 0, start, end, '1h', pdc0, eta_inv_nom)
 
     total_energy = 0
 
