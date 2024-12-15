@@ -34,7 +34,6 @@ def get_optimal_tilt_and_azimuth(lat, lon, tz, alt, start, end,pdc0, gamma_pdc, 
 
 if __name__ == "__main__":
     acumuladorenergia = 0
-    # Fechas para cada estación
     seasons = {
         'Invierno': (datetime.datetime(2022, 12, 21), datetime.datetime(2023, 3, 20)),
         'Primavera': (datetime.datetime(2023, 3, 21), datetime.datetime(2023, 6, 20)),
