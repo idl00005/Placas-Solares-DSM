@@ -2,20 +2,31 @@ import datetime
 import matplotlib.pyplot as plt
 from GeneradorExperimento import GeneradorExperimento
 from data_generator import calculate_irradiance_with_tilt_azimuth, calculate_cell_temperature, calculate_ac_power
+import random
 
 def apply_dirt_penalty(poa_global, cumulative_penalty):
     return poa_global * (1 - cumulative_penalty)
 
 def determine_season(date):
-    """Función que determina la estación basada en la fecha"""
-    if date >= datetime.datetime(date.year, 12, 21) or date < datetime.datetime(date.year, 3, 21):  # Invierno
+    if date >= datetime.datetime(date.year, 12, 21) or date < datetime.datetime(date.year, 3, 21):
         return 'Invierno'
-    elif date >= datetime.datetime(date.year, 3, 21) and date <= datetime.datetime(date.year, 6, 20):  # Primavera
+    elif date >= datetime.datetime(date.year, 3, 21) and date <= datetime.datetime(date.year, 6, 20):
         return 'Primavera'
-    elif date >= datetime.datetime(date.year, 6, 21) and date <= datetime.datetime(date.year, 9, 20):  # Verano
+    elif date >= datetime.datetime(date.year, 6, 21) and date <= datetime.datetime(date.year, 9, 20):
         return 'Verano'
-    else:  # Otoño
+    else:
         return 'Otoño'
+
+def simulate_rain(cumulative_penalty, season):
+    """Simula eventos de lluvia que reducen la penalización acumulativa dependiendo de la estación"""
+    rain_reduction_factors = {
+        'Invierno': 0.5,
+        'Primavera': 0.3,
+        'Verano': 0.1,
+        'Otoño': 0.4
+    }
+    reduction = rain_reduction_factors[season] * cumulative_penalty
+    return max(cumulative_penalty - reduction, 0)
 
 def run_experiment(lat, lon, tz, alt, start, end, pdc0, gamma_pdc, eta_inv_nom, area):
     generador = GeneradorExperimento(lat, lon, tz, alt, 0, 0, start, end, '1h', pdc0 , eta_inv_nom)
@@ -31,10 +42,17 @@ def run_experiment(lat, lon, tz, alt, start, end, pdc0, gamma_pdc, eta_inv_nom, 
     times = []
 
     seasonal_penalty_factors = {
-        'Invierno': 0.001,  # Baja penalización en invierno
-        'Primavera': 0.005,  # Mayor penalización en primavera
-        'Verano': 0.01,      # Penalización más alta en verano
-        'Otoño': 0.002      # Penalización moderada en otoño
+        'Invierno': 0.001,
+        'Primavera': 0.005,
+        'Verano': 0.01,
+        'Otoño': 0.002
+    }
+
+    seasonal_rain_probabilities = {
+        'Invierno': 0.3,
+        'Primavera': 0.2,
+        'Verano': 0.1,
+        'Otoño': 0.2
     }
 
     # Inicializamos el penalizador acumulativo
@@ -52,6 +70,10 @@ def run_experiment(lat, lon, tz, alt, start, end, pdc0, gamma_pdc, eta_inv_nom, 
 
             # Incrementamos la penalización acumulativa según la estación
             cumulative_penalty += seasonal_penalty_factors[season]
+
+            # Simulamos eventos de lluvia según la probabilidad de la estación
+            if random.random() < seasonal_rain_probabilities[season]:
+                cumulative_penalty = simulate_rain(cumulative_penalty, season)
 
         # Calcular la irradiancia con limpiadores automáticos
         poa_global_with_cleaning = calculate_irradiance_with_tilt_azimuth(generador.site, [date], generador.weather, tilt, azimuth)
