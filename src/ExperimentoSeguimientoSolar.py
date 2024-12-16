@@ -6,7 +6,12 @@ from data_generator import calculate_irradiance_with_tilt_azimuth, calculate_cel
 
 def calculate_tracking_angles(date, location):
     """
-    Calcula ángulos dinámicos para el seguimiento solar basado en la posición solar.
+    @brief Calcula los ángulos de seguimiento solar dinámicos basados en la posición solar.
+
+    @param date Fecha y hora para calcular la posición solar.
+    @param location Diccionario con las coordenadas geográficas de la ubicación (latitud y longitud).
+
+    @return Tuple con dos valores: tilt (inclinación) y azimuth (azimut) calculados.
     """
     solar_position = get_solarposition(date, location['latitude'], location['longitude'])
 
@@ -18,7 +23,18 @@ def calculate_tracking_angles(date, location):
 
 def simulate_tracking_performance(lat, lon, tz, alt, start, end, panel_type, is_tracking):
     """
-    Simula la producción energética para sistemas fijos o con seguimiento.
+    @brief Simula la producción energética para sistemas fijos o con seguimiento solar.
+
+    @param lat Latitud de la ubicación geográfica.
+    @param lon Longitud de la ubicación geográfica.
+    @param tz Zona horaria de la ubicación.
+    @param alt Altitud de la ubicación.
+    @param start Fecha de inicio de la simulación.
+    @param end Fecha de finalización de la simulación.
+    @param panel_type Tipo de panel utilizado (por ejemplo, "monocristalino").
+    @param is_tracking Bandera que indica si se utiliza seguimiento solar (True) o sistema fijo (False).
+
+    @return Tuple con tres valores: energía total generada, tiempos de simulación y energía acumulada durante el tiempo.
     """
     specs = {'efficiency': 0.20, 'gamma_pdc': -0.003, 'area': 1.6}  # Características del panel monocristalino
     pdc0 = specs['efficiency'] * specs['area'] * 1000
@@ -51,7 +67,16 @@ def simulate_tracking_performance(lat, lon, tz, alt, start, end, panel_type, is_
 
 def run_tracking_experiment(lat, lon, tz, alt, start, end):
     """
-    Compara la producción energética entre sistemas fijos y con seguimiento solar.
+    @brief Compara la producción energética entre sistemas fijos y con seguimiento solar.
+
+    @param lat Latitud de la ubicación geográfica.
+    @param lon Longitud de la ubicación geográfica.
+    @param tz Zona horaria de la ubicación.
+    @param alt Altitud de la ubicación.
+    @param start Fecha de inicio de la simulación.
+    @param end Fecha de finalización de la simulación.
+
+    @return Tuple con dos valores: energía generada con sistema fijo y energía generada con seguimiento solar.
     """
     fixed_energy, fixed_times, fixed_energy_over_time = simulate_tracking_performance(lat, lon, tz, alt, start, end, "monocristalino", is_tracking=False)
     tracking_energy, tracking_times, tracking_energy_over_time = simulate_tracking_performance(lat, lon, tz, alt, start, end, "monocristalino", is_tracking=True)

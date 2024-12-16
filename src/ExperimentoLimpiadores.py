@@ -5,9 +5,24 @@ from data_generator import calculate_irradiance_with_tilt_azimuth, calculate_cel
 import random
 
 def apply_dirt_penalty(poa_global, cumulative_penalty):
+    """
+    @brief Aplica una penalización a la irradiancia debido a la suciedad acumulada en el panel.
+
+    @param poa_global Irradiancia global en el plano del panel.
+    @param cumulative_penalty Penalización acumulada debido a la suciedad.
+
+    @return Irradiancia ajustada con la penalización por suciedad.
+    """
     return poa_global * (1 - cumulative_penalty)
 
 def determine_season(date):
+    """
+    @brief Determina la estación del año según la fecha proporcionada.
+
+    @param date Fecha para determinar la estación.
+
+    @return Nombre de la estación ('Invierno', 'Primavera', 'Verano', 'Otoño').
+    """
     if date >= datetime.datetime(date.year, 12, 21) or date < datetime.datetime(date.year, 3, 21):
         return 'Invierno'
     elif date >= datetime.datetime(date.year, 3, 21) and date <= datetime.datetime(date.year, 6, 20):
@@ -18,7 +33,14 @@ def determine_season(date):
         return 'Otoño'
 
 def simulate_rain(cumulative_penalty, season):
-    """Simula eventos de lluvia que reducen la penalización acumulativa dependiendo de la estación"""
+    """
+    @brief Simula la reducción de la penalización acumulada debido a eventos de lluvia, dependiendo de la estación del año.
+
+    @param cumulative_penalty Penalización acumulada.
+    @param season Estación del año en la que ocurre la lluvia.
+
+    @return Penalización acumulada ajustada después de la lluvia.
+    """
     rain_reduction_factors = {
         'Invierno': 0.5,
         'Primavera': 0.3,
@@ -29,6 +51,22 @@ def simulate_rain(cumulative_penalty, season):
     return max(cumulative_penalty - reduction, 0)
 
 def run_experiment(lat, lon, tz, alt, start, end, pdc0, gamma_pdc, eta_inv_nom, area):
+    """
+    @brief Simula un experimento de producción energética, considerando la limpieza automática de los paneles y la penalización por suciedad.
+
+    @param lat Latitud de la ubicación geográfica.
+    @param lon Longitud de la ubicación geográfica.
+    @param tz Zona horaria de la ubicación.
+    @param alt Altitud de la ubicación.
+    @param start Fecha de inicio del experimento.
+    @param end Fecha de fin del experimento.
+    @param pdc0 Potencia nominal del panel (W).
+    @param gamma_pdc Coeficiente de temperatura del panel.
+    @param eta_inv_nom Eficiencia nominal del inversor.
+    @param area Área del panel (m^2).
+
+    @return Tres listas: fechas, energía acumulada con limpiadores automáticos, y energía acumulada sin limpiadores.
+    """
     generador = GeneradorExperimento(lat, lon, tz, alt, 0, 0, start, end, '1h', pdc0 , eta_inv_nom)
 
     tilt = 25

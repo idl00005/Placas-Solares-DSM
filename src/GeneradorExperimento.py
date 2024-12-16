@@ -8,6 +8,10 @@ from pvlib import pvsystem, modelchain, irradiance
 from pvlib.solarposition import get_solarposition
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS, sapm_cell
 
+
+## @brief Obtiene datos desde un archivo CSV y los procesa.
+#
+# @return Un DataFrame con los datos filtrados y renombrados.
 def obterer_datos_excel():
     file_path = 'datos2.csv'
 
@@ -72,6 +76,16 @@ def obterer_datos_excel():
     })
     return data_filtered
 
+
+## @brief Crea un modelo fotovoltaico con los parámetros especificados.
+#
+# @param tilt Inclinación de los paneles.
+# @param azimuth Orientación de los paneles.
+# @param pdc0 Potencia nominal de los módulos.
+# @param eta_inv_nom Eficiencia nominal del inversor.
+# @param modulo Tipo de módulo fotovoltaico.
+# @return Un objeto PVSystem configurado.
+
 def crear_modelo(tilt, azimuth, pdc0, eta_inv_nom, modulo):
     temp_model_params = TEMPERATURE_MODEL_PARAMETERS['sapm']['open_rack_glass_glass']
 
@@ -100,9 +114,21 @@ def crear_modelo(tilt, azimuth, pdc0, eta_inv_nom, modulo):
     )
     return system
 
+## @brief Crea una cadena de modelo (ModelChain) para simular un sistema fotovoltaico.
+#
+# @param system Objeto PVSystem que representa el sistema.
+# @param site Ubicación del sistema fotovoltaico.
+# @return Un objeto ModelChain configurado.
 def crear_mc(system, site):
     return modelchain.ModelChain(system, site, aoi_model="physical", spectral_model="no_loss")
 
+
+## @brief Calcula la irradiancia difusa horizontal (DHI) si falta en los datos.
+#
+# @param weather DataFrame con las condiciones climáticas.
+# @param times Serie de tiempo de los datos.
+# @param site Ubicación del sistema fotovoltaico.
+# @return El DataFrame actualizado con la columna dhi calculada.
 
 def obtener_dhi(weather, times, site):
     solar_position = get_solarposition(times, site.latitude, site.longitude)
@@ -116,8 +142,23 @@ def obtener_dhi(weather, times, site):
     weather['dhi'] = weather['dhi'].clip(lower=0)
     return weather
 
-
+## @brief Clase que representa un generador de experimentos fotovoltaicos.
 class GeneradorExperimento:
+    ## @brief Constructor de la clase.
+    #
+    # @param lat Latitud de la ubicación.
+    # @param lon Longitud de la ubicación.
+    # @param tz Zona horaria de la ubicación.
+    # @param alt Altitud de la ubicación.
+    # @param tilt Inclinación inicial de los paneles.
+    # @param azimuth Orientación inicial de los paneles.
+    # @param start Fecha de inicio del experimento.
+    # @param end Fecha de fin del experimento.
+    # @param frecuencia Frecuencia de los datos temporales (ej. 'H' para horas).
+    # @param pdc0 Potencia nominal de los módulos.
+    # @param eta_inv_nom Eficiencia nominal del inversor.
+    # @param modulo Tipo de módulo fotovoltaico (opcional).
+
     def __init__(self, lat, lon, tz, alt, tilt, azimuth,start,end, frecuencia, pdc0, eta_inv_nom, modulo = ''):
         self.pdc0 = pdc0
         self.eta_inv_nom = eta_inv_nom
@@ -133,13 +174,25 @@ class GeneradorExperimento:
         self.system = crear_modelo(tilt, azimuth, pdc0, eta_inv_nom, modulo)
         self.mc = crear_mc(self.system, self.site)
 
+    ## @brief Cambia la inclinación del sistema fotovoltaico.
+    #
+    # @param tilt Nueva inclinación.
+
     def set_tilt(self, tilt):
         self.tilt = tilt
         self.mc.system.surface_tilt = tilt
 
+    ## @brief Cambia la orientación del sistema fotovoltaico.
+    #
+    # @param azimuth Nueva orientación.
+
     def set_azimuth(self, azimuth):
         self.azimuth = azimuth
         self.mc.system.surface_azimuth = azimuth
+
+    ## @brief Calcula la irradiancia sobre el módulo considerando la inclinación y orientación.
+    #
+    # @return Un DataFrame con los valores de irradiancia total sobre el módulo.
 
     def calculate_irradiance_with_tilt_azimuth(self):
         # Obtener la posición solar en los tiempos proporcionados
@@ -152,6 +205,10 @@ class GeneradorExperimento:
             self.weather['dni'], self.weather['ghi'], self.weather['dhi']
         )
         return irradiance_on_module['poa_global']
+
+    ## @brief Calcula la temperatura de las celdas fotovoltaicas.
+    #
+    # @return Un array con las temperaturas de las celdas.
 
     def calculate_cell_temperature(self):
         a = -3.47
@@ -166,17 +223,29 @@ class GeneradorExperimento:
             deltaT=deltaT
         )
 
+    ## @brief Calcula la potencia en corriente alterna generada por el sistema.
+    #
+    # @return Un DataFrame con los valores de potencia AC generados.
+
     def calculate_ac_power(self):
         poa_global = self.calculate_irradiance_with_tilt_azimuth()
         temp_cell = self.calculate_cell_temperature()
         dc_power = self.system.pvwatts_dc(poa_global, temp_cell)
         return pvwatts(dc_power, 300)
 
+    ## @brief Cambia el tipo de módulo fotovoltaico utilizado en el sistema.
+    #
+    # @param modulo Nuevo tipo de módulo fotovoltaico.
+    # @return El sistema actualizado.
+
     def set_modulo(self, modulo):
         self.system = crear_modelo(self.tilt, self.azimuth, self.pdc0, self.eta_inv_nom, modulo)
         self.mc = crear_mc(self.system, self.site)
         return self.system
 
+    ## @brief Calcula la desviación típica de la energía diaria generada.
+    #
+    # @return Un valor numérico con la desviación típica de la energía diaria.
     def calcular_desviacion_tipica(self):
         energia_diaria = self.calculate_ac_power().resample('D').sum()
         return energia_diaria.std()

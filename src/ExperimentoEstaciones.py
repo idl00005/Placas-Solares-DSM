@@ -4,6 +4,22 @@ from GeneradorExperimento import GeneradorExperimento
 
 
 def get_optimal_tilt_and_azimuth(lat, lon, tz, alt, start, end,pdc0, gamma_pdc, eta_inv_nom, area):
+    """
+    Calcula los ángulos de inclinación y azimut óptimos para maximizar la energía generada en función de los parámetros dados.
+
+    @param lat: Latitud del lugar de instalación.
+    @param lon: Longitud del lugar de instalación.
+    @param tz: Zona horaria del lugar de instalación.
+    @param alt: Altitud del lugar de instalación.
+    @param start: Fecha de inicio del experimento.
+    @param end: Fecha de fin del experimento.
+    @param pdc0: Potencia máxima de la planta fotovoltaica (W).
+    @param gamma_pdc: Coeficiente de temperatura de la potencia (1/°C).
+    @param eta_inv_nom: Eficiencia nominal del inversor.
+    @param area: Área del sistema fotovoltaico (m²).
+
+    @return: Los ángulos de inclinación y azimut óptimos y la energía anual generada (kWh).
+        """
     tilt_range = range(0, 91, 5)
     azimuth_range = range(0, 361, 10)
 
@@ -38,7 +54,13 @@ if __name__ == "__main__":
         'Otoño': (datetime.datetime(2023, 9, 21), datetime.datetime(2023, 12, 20))
     }
 
+    """
+    Ejecuta el experimento para una estación específica y calcula los resultados correspondientes.
 
+    @param season: Nombre de la estación (Invierno, Primavera, Verano, Otoño).
+    @param season_start: Fecha de inicio de la estación.
+    @param season_end: Fecha de fin de la estación.
+    """
     for season, (season_start, season_end) in seasons.items():
         print(f"\nEjecutando experimento para {season} ({season_start.date()} - {season_end.date()})")
         best_tilt, best_azimuth, best_energy = get_optimal_tilt_and_azimuth(38.732602, -9.116373, 'Europe/Lisbon', 10, season_start, season_end, 300, -0.004, 0.96, 1.6)

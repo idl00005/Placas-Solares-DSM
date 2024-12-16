@@ -1,9 +1,32 @@
+## @file simulacion_pv.py
+# @brief Simulación de producción de energía para diferentes tipos de módulos fotovoltaicos en un rango de años.
+#
+# Este script utiliza la biblioteca `pvlib` para modelar la producción energética de sistemas fotovoltaicos
+# con diferentes tecnologías de módulos solares (monocristalino, policristalino y película delgada).
+# La simulación se realiza para un rango de tiempo específico, considerando las condiciones meteorológicas
+# históricas de una ubicación geográfica determinada.
+#
+# ### Funcionalidades principales:
+# - Dividir los datos meteorológicos por año para análisis detallado.
+# - Configurar y simular diferentes sistemas fotovoltaicos con módulos específicos.
+# - Usar el modelo `ModelChain` de `pvlib` para calcular la energía producida anualmente.
+# - Generar gráficos comparativos de la producción energética anual por tipo de módulo.
+# - Calcular estadísticas relevantes como producción total, promedio anual y desviación estándar.
+#
+# ### Aplicaciones:
+# Este script es útil para evaluar y comparar la eficiencia de diferentes tecnologías de módulos
+# solares en una ubicación específica y determinar la opción más adecuada según la producción
+# energética esperada.
+
+
+
 import datetime
 import pandas as pd
 import pvlib
 import matplotlib.pyplot as plt
 from src.GeneradorExperimento import GeneradorExperimento
 
+# Configuración inicial de ubicación y sistema
 lat = 38.732602
 lon = -9.116373
 tz = 'Europe/Lisbon'
@@ -15,6 +38,7 @@ azimuth = 200
 pdc0 = 300
 eta_inv_nom = 0.96
 
+# @brief Crear una instancia del generador de experimentos.
 generador = GeneradorExperimento(lat, lon, tz, alt, 0, 0, start, end, '1h', pdc0, eta_inv_nom)
 
 # Carga de la base de datos CEC

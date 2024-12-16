@@ -52,7 +52,12 @@ ghi_threshold = 2  # W/m², ajusta este valor según la sensibilidad que desees
 # Ejecutar simulación y actualizar gráficos
 for i, time in enumerate(generador.weather.index):
     weather_hour = generador.weather.iloc[i:i+1]
+    """
+    Ejecuta la simulación para cada hora y actualiza los gráficos de energía acumulada y energía semanal.
 
+    @param i: Índice de la hora actual.
+    @param time: Tiempo (fecha y hora) de la simulación.
+    """
     # Filtrar horas sin irradiancia solar significativa
     if weather_hour['ghi'].values[0] > ghi_threshold:
         generador.mc.run_model(weather_hour)

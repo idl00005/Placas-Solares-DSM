@@ -12,6 +12,15 @@ import datetime
 
 
 def calculate_irradiance(loc, times, data):
+    """
+    @brief Calcula la irradiancia total sobre el módulo solar, dada una ubicación y datos meteorológicos.
+
+    @param loc Objeto Location de pvlib, que contiene la ubicación geográfica.
+    @param times Índice de tiempo con las fechas/hora para las que calcular la irradiancia.
+    @param data DataFrame con los datos meteorológicos necesarios (DNI, GHI, DHI).
+
+    @return irradiance_on_module['poa_global'] La irradiancia global sobre el plano del módulo (W/m²).
+    """
     solar_position = loc.get_solarposition(times)
     surface_azimuth = 180
     surface_tilt = 30
@@ -25,17 +34,15 @@ def calculate_irradiance(loc, times, data):
 
 def calculate_irradiance_with_tilt_azimuth(loc, times, data, tilt, azimuth):
     """
-    Calcula la irradiancia sobre el módulo solar tomando en cuenta la inclinación y la orientación especificadas.
+    @brief Calcula la irradiancia sobre el módulo solar tomando en cuenta la inclinación y la orientación especificadas.
 
-    Parameters:
-    - loc: El objeto Location de pvlib, que contiene la ubicación geográfica.
-    - times: Un índice de tiempo con las fechas/hora para las que calcular la irradiancia.
-    - data: Un DataFrame con los datos meteorológicos necesarios (DNI, GHI, DHI).
-    - tilt: La inclinación del panel solar en grados.
-    - azimuth: La orientación del panel solar en grados.
+    @param loc Objeto Location de pvlib, que contiene la ubicación geográfica.
+    @param times Índice de tiempo con las fechas/hora para las que calcular la irradiancia.
+    @param data DataFrame con los datos meteorológicos necesarios (DNI, GHI, DHI).
+    @param tilt Inclinación del panel solar en grados.
+    @param azimuth Orientación del panel solar en grados.
 
-    Returns:
-    - irradiance_on_module['poa_global']: La irradiancia global sobre el plano inclinado (W/m²).
+    @return irradiance_on_module['poa_global'] La irradiancia global sobre el plano inclinado (W/m²).
     """
     # Obtener la posición solar en los tiempos proporcionados
     solar_position = loc.get_solarposition(times)
@@ -50,6 +57,15 @@ def calculate_irradiance_with_tilt_azimuth(loc, times, data, tilt, azimuth):
     return irradiance_on_module['poa_global']
 
 def calculate_cell_temperature(poa_global, temp_air, wind_speed):
+    """
+    @brief Calcula la temperatura de la célula del panel solar usando el modelo SAPM.
+
+    @param poa_global Irradiancia global sobre el panel solar (W/m²).
+    @param temp_air Temperatura ambiente (°C).
+    @param wind_speed Velocidad del viento (m/s).
+
+    @return temperatura de la célula del panel solar (°C).
+    """
     a = -3.47
     b = -0.0594
     deltaT = 3
@@ -63,6 +79,14 @@ def calculate_cell_temperature(poa_global, temp_air, wind_speed):
     )
 
 def calculate_ac_power(poa_global, temp_cell):
+    """
+    @brief Calcula la potencia de corriente alterna (AC) generada por el sistema fotovoltaico.
+
+    @param poa_global Irradiancia global sobre el panel solar (W/m²).
+    @param temp_cell Temperatura de la célula del panel solar (°C).
+
+    @return potencia en corriente alterna (W).
+    """
     module_params = {'pdc0': 300, 'gamma_pdc': -0.003}
     inverter_params = {'pdc0': 300}
     system = PVSystem(
@@ -77,7 +101,12 @@ def calculate_ac_power(poa_global, temp_cell):
 
 def simulate_cleaning_effect(times, data):
     """
-    Simula el efecto de los limpiadores sobre la irradiancia de los paneles solares.
+    @brief Simula el efecto de los limpiadores sobre la irradiancia de los paneles solares, considerando factores como viento, temperatura y tiempo.
+
+    @param times Índice de tiempo con las fechas/hora para simular el efecto de limpieza.
+    @param data DataFrame con los datos meteorológicos necesarios (temperatura, viento).
+
+    @return cleaning_factor Factor de limpieza ajustado que modifica la irradiancia (valor entre 0 y 1).
     """
     # Eliminar la parte de precipitación
     # Solo utilizamos el viento, la temperatura y el tiempo para el efecto de los limpiadores
