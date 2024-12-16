@@ -10,12 +10,6 @@ from pvlib import pvsystem, modelchain, irradiance
 from pvlib.solarposition import get_solarposition
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS, sapm_cell
 
-from data_generator import calculate_irradiance_with_tilt_azimuth
-
-
-def configure_locale():
-    locale.setlocale(locale.LC_TIME, 'es_ES.utf8')
-
 def obterer_datos_excel():
     file_path = 'datos2.csv'
 
@@ -80,33 +74,6 @@ def obterer_datos_excel():
     })
     return data_filtered
 
-def load_excel_data(file_path):
-    df = pd.read_excel(file_path)
-    df['Hora'] = df['Tiempo'].str.extract(r'a las (\d{1,2}:\d{2})', expand=False)
-    df[['Dia', 'Mes']] = df['Tiempo'].str.extract(r'(\d+) \((.*?)\)', expand=True)
-    df['Fecha'] = df['Dia'] + ' ' + df['Mes']
-    df['Fecha'] = df['Fecha'].str.replace('de ', '', regex=False).str.strip()
-    df['Fecha Completa'] = df['Fecha'] + ' ' + df['Hora']
-    df['Fecha Completa'] = df['Fecha Completa'].str.replace(r'^\d+\s', '', regex=True)
-    df['Tiempo'] = pd.to_datetime(df['Fecha Completa'], format='%d %B %H:%M', errors='coerce', dayfirst=True).apply(lambda x: x.replace(year=2023) if pd.notnull(x) else x)
-    df = df.dropna(subset=['Tiempo'])
-    df.rename(columns={
-        'Radiación Global (kJ/m2)': 'ghi',
-        'Radiación Difusa (kJ/m2)': 'dhi',
-        'Radiación Directa (kJ/m2)': 'dni'
-    }, inplace=True)
-    df.set_index('Tiempo', inplace=True)
-    return df
-
-def create_full_year_dataframe(times, ruta_excel, lat, lon, start, end):
-    df = load_excel_data(ruta_excel)
-    data = pd.DataFrame(0.0, index=times, columns=['ghi', 'dhi', 'dni', 'temp', 'wspd'])
-    data.update(df)
-    meteostat_info = Hourly(Point(lat,lon), pd.to_datetime(start), pd.to_datetime(end)).fetch()
-    data['temp'] = meteostat_info['temp']
-    data['wspd'] = meteostat_info['wspd']
-    return data
-
 def crear_modelo(tilt, azimuth, pdc0, eta_inv_nom, modulo):
     temp_model_params = TEMPERATURE_MODEL_PARAMETERS['sapm']['open_rack_glass_glass']
 
@@ -154,7 +121,6 @@ def obtener_dhi(weather, times, site):
 
 class GeneradorExperimento:
     def __init__(self, lat, lon, tz, alt, tilt, azimuth,start,end, frecuencia, pdc0, eta_inv_nom, modulo = ''):
-        configure_locale()
         self.pdc0 = pdc0
         self.eta_inv_nom = eta_inv_nom
         self.site = Location(lat, lon, tz, alt)
@@ -212,6 +178,10 @@ class GeneradorExperimento:
         self.system = crear_modelo(self.tilt, self.azimuth, self.pdc0, self.eta_inv_nom, modulo)
         self.mc = crear_mc(self.system, self.site)
         return self.system
+
+    def calcular_desviacion_tipica(self):
+        energia_diaria = self.calculate_ac_power().resample('D').sum()
+        return energia_diaria.std()
 
 
 

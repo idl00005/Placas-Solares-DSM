@@ -42,17 +42,37 @@ if __name__ == "__main__":
     for season, (season_start, season_end) in seasons.items():
         print(f"\nEjecutando experimento para {season} ({season_start.date()} - {season_end.date()})")
         best_tilt, best_azimuth, best_energy = get_optimal_tilt_and_azimuth(38.732602, -9.116373, 'Europe/Lisbon', 10, season_start, season_end, 300, -0.004, 0.96, 1.6)
+        days_in_season = (season_end - season_start).days + 1
+        print(f"days_in_season: {days_in_season}")
+        average_daily_energy = best_energy / days_in_season
+
+        # Calcular la energía generada por día
+        generador = GeneradorExperimento(38.732602, -9.116373, 'Europe/Lisbon', 10, best_tilt, best_azimuth,
+                                         season_start, season_end, '1h', 300, 0.96)
+        desviacion_tipica_diaria = generador.calcular_desviacion_tipica()
+
         print(f"Tilt óptimo: {best_tilt}°")
         print(f"Azimuth óptimo: {best_azimuth}°")
         print(f"Energía generada: {best_energy:.2f} kWh")
+        print(f"Energía media diaria: {average_daily_energy:.2f} kWh/día")
+        print(f"Desviación típica diaria: {desviacion_tipica_diaria/1000:.2f} kWh/día")
         acumuladorenergia += best_energy
 
-    print(f"\nEjecutando experimento para toda la temporada ({seasons['Invierno'][0]})-({seasons['Verano'][1]})")
-    best_tilt, best_azimuth, best_energy = get_optimal_tilt_and_azimuth(38.732602, -9.116373, 'Europe/Lisbon', 10, seasons['Invierno'][0], seasons['Verano'][1], 300, -0.004, 0.96, 1.6)
+    print(f"\nEjecutando experimento para toda la temporada ({seasons['Invierno'][0]})-({seasons['Otoño'][1]})")
+    best_tilt, best_azimuth, best_energy = get_optimal_tilt_and_azimuth(38.732602, -9.116373, 'Europe/Lisbon', 10, seasons['Invierno'][0], seasons['Otoño'][1], 300, -0.004, 0.96, 1.6)
+    days_in_season = -(seasons['Invierno'][0] - seasons['Otoño'][1]).days + 1
+    print(f"days_in_season: {days_in_season}")
+    average_daily_energy = best_energy / days_in_season
+
+    generador = GeneradorExperimento(38.732602, -9.116373, 'Europe/Lisbon', 10, best_tilt, best_azimuth,
+                                     seasons['Invierno'][0], seasons['Otoño'][1], '1h', 300, 0.96)
+    desviacion_tipica_diaria = generador.calcular_desviacion_tipica()
+
     print(f"Tilt óptimo: {best_tilt}°")
     print(f"Azimuth óptimo: {best_azimuth}°")
     print(f"Energía generada: {best_energy:.2f} kWh")
+    print(f"Energía media diaria: {average_daily_energy:.2f} kWh/día")
+    print(f"Desviación típica diaria: {desviacion_tipica_diaria/1000:.2f} kWh/día")
     print(f"Energía generada aplicando la optimización del ángulo y orientación por estación: {acumuladorenergia:.2f} kWh")
-    print(f"Energía ganada con la optimización de ángulo y orientación: {acumuladorenergia-best_energy:.2f} kWh ")
-
+    print(f"Energía ganada con la optimización de ángulo y orientación en cada estación: {acumuladorenergia-best_energy:.2f} kWh ({((acumuladorenergia-best_energy)/best_energy)*100:.2f}%)")
 

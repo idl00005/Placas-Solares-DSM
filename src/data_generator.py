@@ -10,37 +10,6 @@ from pvlib.temperature import sapm_cell
 from pvlib.pvsystem import PVSystem
 import datetime
 
-def configure_locale():
-    locale.setlocale(locale.LC_TIME, 'es_ES.utf8')
-
-def load_excel_data(file_path):
-    df = pd.read_excel(file_path)
-    df['Hora'] = df['Tiempo'].str.extract(r'a las (\d{1,2}:\d{2})', expand=False)
-    df[['Dia', 'Mes']] = df['Tiempo'].str.extract(r'(\d+) \((.*?)\)', expand=True)
-    df['Fecha'] = df['Dia'] + ' ' + df['Mes']
-    df['Fecha'] = df['Fecha'].str.replace('de ', '', regex=False).str.strip()
-    df['Fecha Completa'] = df['Fecha'] + ' ' + df['Hora']
-    df['Fecha Completa'] = df['Fecha Completa'].str.replace(r'^\d+\s', '', regex=True)
-    df['Tiempo'] = pd.to_datetime(df['Fecha Completa'], format='%d %B %H:%M', errors='coerce', dayfirst=True).apply(lambda x: x.replace(year=2023) if pd.notnull(x) else x)
-    df = df.dropna(subset=['Tiempo'])
-    df.rename(columns={
-        'Radiación Global (kJ/m2)': 'GHI',
-        'Radiación Difusa (kJ/m2)': 'DHI',
-        'Radiación Directa (kJ/m2)': 'DNI'
-    }, inplace=True)
-    df.set_index('Tiempo', inplace=True)
-    return df
-
-def create_full_year_dataframe(times):
-    return pd.DataFrame(0.0, index=times, columns=['GHI', 'DHI', 'DNI', 'temp', 'wspd'])
-
-def update_dataframe_with_excel_data(data, df):
-    data.update(df)
-    return data
-
-def fetch_meteostat_data(location, start, end):
-    meteostat_info = Hourly(location, start, end)
-    return meteostat_info.fetch()
 
 def calculate_irradiance(loc, times, data):
     solar_position = loc.get_solarposition(times)

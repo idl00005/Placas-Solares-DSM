@@ -1,4 +1,5 @@
 import datetime
+import matplotlib.pyplot as plt
 from pvlib.solarposition import get_solarposition
 from GeneradorExperimento import GeneradorExperimento
 from data_generator import calculate_irradiance_with_tilt_azimuth, calculate_cell_temperature, calculate_ac_power
@@ -15,8 +16,6 @@ def calculate_tracking_angles(date, location):
 
     return tilt, azimuth
 
-
-
 def simulate_tracking_performance(lat, lon, tz, alt, start, end, panel_type, is_tracking):
     """
     Simula la producción energética para sistemas fijos o con seguimiento.
@@ -30,6 +29,7 @@ def simulate_tracking_performance(lat, lon, tz, alt, start, end, panel_type, is_
     generador = GeneradorExperimento(lat, lon, tz, alt, 0, 0, start, end, '1h', pdc0, eta_inv_nom )
 
     total_energy = 0
+    energy_over_time = []
 
     for date in generador.times:
         location = {'latitude': lat, 'longitude': lon}
@@ -45,19 +45,29 @@ def simulate_tracking_performance(lat, lon, tz, alt, start, end, panel_type, is_
         ac_power = calculate_ac_power(poa_global_adjusted, temp_cell)
 
         total_energy += ac_power.sum() / 1000  # Convertir a kWh
+        energy_over_time.append(total_energy)
 
-    return total_energy
-
+    return total_energy, generador.times, energy_over_time
 
 def run_tracking_experiment(lat, lon, tz, alt, start, end):
     """
     Compara la producción energética entre sistemas fijos y con seguimiento solar.
     """
-    fixed_energy = simulate_tracking_performance(lat, lon, tz, alt, start, end, "monocristalino", is_tracking=False)
-    tracking_energy = simulate_tracking_performance(lat, lon, tz, alt, start, end, "monocristalino", is_tracking=True)
+    fixed_energy, fixed_times, fixed_energy_over_time = simulate_tracking_performance(lat, lon, tz, alt, start, end, "monocristalino", is_tracking=False)
+    tracking_energy, tracking_times, tracking_energy_over_time = simulate_tracking_performance(lat, lon, tz, alt, start, end, "monocristalino", is_tracking=True)
+
+    # Generar el gráfico
+    plt.figure(figsize=(10, 6))
+    plt.plot(fixed_times, fixed_energy_over_time, label='Sistema Fijo')
+    plt.plot(tracking_times, tracking_energy_over_time, label='Seguimiento Solar')
+    plt.xlabel('Fecha')
+    plt.ylabel('Energía acumulada (kWh)')
+    plt.title('Producción de energía a lo largo del tiempo')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
     return fixed_energy, tracking_energy
-
 
 if __name__ == "__main__":
     # Parámetros del experimento
