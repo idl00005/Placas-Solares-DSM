@@ -1,7 +1,5 @@
-import locale
 import pandas as pd
 import pvlib
-from meteostat import Hourly, Point
 import numpy as np
 from pvlib.inverter import pvwatts
 
