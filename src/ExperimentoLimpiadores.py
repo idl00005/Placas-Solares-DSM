@@ -1,7 +1,7 @@
 import datetime
 import matplotlib.pyplot as plt
 from GeneradorExperimento import GeneradorExperimento
-from data_generator import calculate_irradiance_with_tilt_azimuth, calculate_cell_temperature, calculate_ac_power
+from OtrosCalculos import calculate_irradiance_with_tilt_azimuth, calculate_cell_temperature, calculate_ac_power
 import random
 
 def apply_dirt_penalty(poa_global, cumulative_penalty):

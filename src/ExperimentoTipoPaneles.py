@@ -84,8 +84,8 @@ for year, weather in weather_by_year.items():
 # Generar el gráfico
 plt.figure(figsize=(10, 6))
 for nombre, resultados in resultados_por_sistema.items():
-    años, produccion = zip(*resultados)
-    plt.plot(años, produccion, label=nombre)
+    anios, produccion = zip(*resultados)
+    plt.plot(anios, produccion, label=nombre)
 
 plt.xlabel('Año')
 plt.ylabel('Producción de Energía (kWh)')

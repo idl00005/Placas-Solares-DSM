@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import pandas as pd
+import numpy as np
 
 from GeneradorExperimento import GeneradorExperimento
 
@@ -42,12 +42,6 @@ total_energy_weekly = 0
 
 # Definir umbral de GHI para filtrar horas sin sol (puedes ajustarlo según tus datos)
 ghi_threshold = 2  # W/m², ajusta este valor según la sensibilidad que desees
-
-#pd.set_option('display.max_columns', None)  # Mostrar todas las columnas sin truncar
-#pd.set_option('display.width', None)
-#pd.set_option('display.max_rows', None)
-
-# print(generador.weather)
 
 # Ejecutar simulación y actualizar gráficos
 for i, time in enumerate(generador.weather.index):
@@ -93,6 +87,18 @@ for i, time in enumerate(generador.weather.index):
         fig.canvas.draw()
         fig.canvas.flush_events()
         plt.pause(0.05)
+
+# Calcular la energía producida durante todo el año
+energia_total_anual = sum(energy_hourly)
+print(f"Energía total producida durante el año: {energia_total_anual:.2f} kWh")
+
+# Calcular la energía media producida cada semana
+energia_media_semanal = sum(weekly_energy) / len(weekly_energy)
+print(f"Energía media producida cada semana: {energia_media_semanal:.2f} kWh")
+
+# Calcular la desviación típica de la energía semanal
+desviacion_tipica_semanal = np.std(weekly_energy)
+print(f"Desviación típica de la energía semanal: {desviacion_tipica_semanal:.2f} kWh")
 
 # Detener la interactividad para finalizar
 plt.ioff()

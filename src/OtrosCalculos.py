@@ -1,14 +1,9 @@
-# data_generator.py
-import locale
-import pandas as pd
+# OtrosCalculos.py
 import numpy as np
-from meteostat import Point, Hourly
 from pvlib.inverter import pvwatts
-from pvlib.location import Location
 from pvlib import irradiance
 from pvlib.temperature import sapm_cell
 from pvlib.pvsystem import PVSystem
-import datetime
 
 
 def calculate_irradiance(loc, times, data):
